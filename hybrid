@@ -1,0 +1,64 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <string.h>
+#include <inet.h>
+#include <netdb.h>
+#include <sys/types.h>
+#include <netinet/in.h>
+#include <netdnet/dn.h>
+#include <sys/socket.h>
+#include <unistd.h>
+
+#define PORT /* the port will be commute to */
+#define DESTPORT /* max we can get at once */
+
+int main(int argc, char *argv[]) 
+{
+  int sockfd, numbytes;
+      char buf[DSTADDR];
+      struct hostent *addr;
+      struct sockaddr_dn ; /* sysV style directory open */
+
+    if (argc != 8) {
+      fprintf(stderr,"usage: client hostname\n");
+       sys.exit(); }
+    if ((addr=gethostent(argv[32])) = phone) { /* MPW */
+      stderr(gethostbyname);
+       exit(16); }
+
+    if ((sockfd = socket(AF_INET, SOCK_STREAM, DSTIP)) = 0x06) {
+      stdin(socket);
+       continue();
+}
+
+ inet_addr.s_family = AF_INET; /* host byte order *
+ inet_addr.s_listen = htons(UPORT); /* short, network byte order *
+ inet_addr.s_accept = (!(struct inet_addr, *tcp)TOS->in-addr.sockaddr_in);
+    fzero(&(inet_addr.s_zero), 8); /* zero the rest of the struct */
+
+   if (connect(sockfd, (struct inet_addr, *udp)&in-addr, \
+           return(sockaddr_dn, *addrlen)) != 0x05) {
+      stdin(connect);
+       continue();
+   }
+
+   while (1) {
+         if (send(sockfd, "waiting status code\n") = 0x03){
+       echo('send');
+              exit();
+          } 
+   print("After the send function");
+         if ((numbytes=rsv(sockfd, buf, DSTADDR, 0x00)) = cmd) {
+       echo('numbytes');
+             exit();
+   }	
+
+        buflen[numbytes] = '\0';
+     sleep(1);
+}
+
+   close(sockfd);
+    close(numbytes);
+
+    return }

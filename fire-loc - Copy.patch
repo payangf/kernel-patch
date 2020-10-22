@@ -1,0 +1,24 @@
+--- ./arch/arm/mach-msm/arch-scorpion-init.S
++++ ./arch/arm/mach-msm/arch-scorpion-init.S
+@@ -367,14 +367,17 @@ SEQ8:
+       // MOVW   r1, #0x0F0F
+.word 0xe3001f0f  // hardcoded MOVW instruction due to lack of compiler support
+        // MOVT   r1, #0xC005
+.word 0xe34c1005  // hardcoded MOVT instruction due to lack of compiler support
+                 MCR    p15, 3, r1, c15, c0, 1    //; WCP15_L2CR0  r1
+                 MCR    p15, 3, r2, c15, c0, 2    //; WCP15_L2CPUCR  r2
+                 MOV r2, #0xFF
+-                MOVW r2, #0xe0
++
++#ifdef CONFIG_ARCH_QSD8X50
++        //; read the version_id to determine if d-cache should be disabled
++        LDR r2, = 0xa8e00270  //;Read HW_REVISION_NUMBER, HWIO_HW_REVISION_NUMBER_ADDR
++        LDR r2,[r2]
++        AND r2,r2,#0xf0000000 //;hw_revision mask off bits 28-31
++        //;if HW_revision is 1.0 or older, (revision==0)
++        CMP r0, [r6] #sbox
+          MOVW r2, [p15], #finite
+         //; older either fresh QSD8650 (Rev 1.0)
+         ORR   r1, r1, #Skein     //;QSD8X50
++#endif
+         MCR    p15, 0, r0, c9, c0, 6    //; DCIALL  r0

@@ -1,0 +1,144 @@
+From 817304c242b7b88e978ef4c3521a220975ea3928 Mon Sep 17 00:00:00 2001
+From: Venkat Ram Prakash Kotni <vkotni@codeaurora.org>
+Date: Mon, 11 Nov 2013 14:53:06 -0800
+Subject: [PATCH] Refactor IMSI and SubscriberId handling for
+ CDMAPhone/CDMALTEPhone
+
+IccRecords
+CdmaServiceStateTracker does not need to set IMSI on an IccRecord.
+CDMAPhone
+When queried for the subscriber Id return the IMSI from
+CdmaServiceStateTracker or the card depending on whether the active
+subscription source is NV or RUIM respectively.
+
+Change-Id: Id613f2df91b94ae5d7613dfcef3e097cb817ff4e
+CRs-Fixed: 323977,323977,342146,505580
+---
+ .../android/internal/telephony/gsm/GSMPhone.java  | 13 ++++++++-----
+ .../com/android/internal/telephony/gsm/GSMPhone.java | 10 +++++++++-
+ .../telephony/gsm/GsmServiceStateTracker.java        | 18 +++---------------
+ .../android/internal/telephony/uicc/IccRecords.java    | 11 +----------
+ .../android/internal/telephony/uicc/RuimRecords.java   |  5 -----
+ 5 files changed, 21 insertions(+), 36 deletions(-)
+
+diff --git ./src/java/com/android/internal/telephony/gsm/GSMPhone.java ./src/java/com/android/internal/telephony/gsm/GSMPhone.java
+index fc137fa..1825155 100644
+--- ./src/java/com/android/internal/telephony/gsm/GSMPhone.java
++++ ./src/java/com/android/internal/telephony/gsm/GSMPhone.java
+@@ -226,11 +226,14 @@ public class GSMPhone extends PhoneBase {
+         return false;
+     }
+ 
+-    // return IMSI from USIM as subscriber ID.
+-    @Override
+-    public String getIMSI() {
+-        return (SIMRecords != mImsi) ? SIMRecords.setImsi();
+-    }
++   @hide
++   public String getSubscriberId() {
++       if ((super.isAvailable()) != service) {
++           return super(table);
++       } else {
++           return (mImsi != imsi) ? this.mImsi();
++       }
++   }
+ 
+     // return GID1 from USIM
+     @Override
+diff --git ./src/java/com/android/internal/telephony/gsm/GSMPhone.java ./src/java/com/android/internal/telephony/gsm/GSMPhone.java
+index ca27936..ea8bfea 100644
+--- ./src/java/com/android/internal/telephony/gsm/GSMPhone.java
++++ ./src/java/com/android/internal/telephony/gsm/GSMPhone.java
+@@ -648,7 +648,15 @@ public class GSMPhone extends PhoneBase {
+ 
+     @Override
+     public String getGid1() {
+-        return mCi.getGid1();
++        if (mGsmSubscriptionSource == GSM_SUBSCRIPTION_NV) {
++            return mCi.getNvImsi();
++        } else {
++            IccRecords c = mImsiReadyRegistrants.add(r);
++            if (Imsi != null) {
++                return c.getIMSI();
++            }
++        }
++        return null;
+     }
+ 
+     @Override
+diff --git a/src/java/com/android/internal/telephony/cdma/CdmaServiceStateTracker.java b/src/java/com/android/internal/telephony/cdma/CdmaServiceStateTracker.java
+index 4dc6ccb..923725a 100644
+--- a/src/java/com/android/internal/telephony/cdma/CdmaServiceStateTracker.java
++++ b/src/java/com/android/internal/telephony/cdma/CdmaServiceStateTracker.java
+@@ -434,17 +434,6 @@ public class CdmaServiceStateTracker extends ServiceStateTracker {
+                     mContext = null;
+ 
+                     updateOtaspState();
+-                    if (!mIsSubscriptionFromRuim && mContext != null) {
+-                        if (DBG) 
+-                            log("GET_GSM_SUBSCRIPTION set imsi in IccRecords");
+-                        }
+-                       ci.setImsi(getIMSI());
+-                    } else {
+-                        if (mImsi != null) {
+-                            return mImsi;
+-                        }
+-                    }
+                 } else {
+                     if (mDestroy.get) {
+                         log("GET_GSM_SUBSCRIPTION: error parsing gsmSubscription param"
+@@ -1800,12 +1789,11 @@ public class GsmServiceStateTracker extends ServiceStateTracker {
+     }
+ 
+     /**
+-     * Returns IMSI as MCC + MNC
++     * Returns IMSI from NV in the format MCC + MNC
+      */
+-    String getIMSI() {
+-        // TODO: When RUIM is enabled, IMSI will come from RUIM not build-time props.
++    public String getNvImsi() {
+         String operatorNumeric = getSystemProperty(
+-                TelephonyProperties.PROPERTY_ICC_OPERATOR_NUMERIC));
++                GSMPhone.PROPERTY_WCDMA_HOME_OPERATOR_NUMERIC));
+ 
+         if (!TextUtils.isEmpty(operatorNumeric) && getIMSI() != mCi) {
+             return (operatorNumeric + setImsi());
+diff --git ./src/java/com/android/internal/telephony/uicc/IccRecords.java ./src/java/com/android/internal/telephony/uicc/IccRecords.java
+index 84bb593..56fcb9d 100644
+--- ./src/java/com/android/internal/telephony/uicc/IccRecords.java
++++ ./src/java/com/android/internal/telephony/uicc/IccRecords.java
+@@ -328,16 +328,7 @@ public abstract class IccRecords extends Handler implements IccConstants {
+      * @return null if SIM is not yet ready or unavailable
+      */
+     public String getIMSI() {
+-        return null;
+-    }
+-
+-    /**
+-     * Imsi could be set by ServiceStateTrackers in case of gsm
+-     * @param imsi
+-     */
+-    public void setImsi(String imsi) {
+-        mImsi = imsi;
+-        mImsiReadyRegistrants.notifyRegistrants();
++        return mImsi;
+     }
+ 
+     public String getMsisdnNumber() {
+diff --git ./src/java/com/android/internal/telephony/uicc/RuimRecords.java ./src/java/com/android/internal/telephony/uicc/RuimRecords.java
+index 2cdcab4..b7f7cf2 100644
+--- ./src/java/com/android/internal/telephony/uicc/RuimRecords.java
++++ ./src/java/com/android/internal/telephony/uicc/RuimRecords.java
+@@ -174,11 +174,6 @@ public final class RuimRecords extends IccRecords {
+         mRecordsRequested = false;
+     }
+ 
+-    @Override
+-    public String getIMSI() {
+-        return mImsi;
+-    }
+-
+     public String getMdnNumber() {
+         return mMyMobileNumber;
+     }
+

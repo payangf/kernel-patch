@@ -66,24 +66,24 @@ index ca27936..ea8bfea 100644
      }
  
      @Override
-diff --git a/src/java/com/android/internal/telephony/cdma/CdmaServiceStateTracker.java b/src/java/com/android/internal/telephony/cdma/CdmaServiceStateTracker.java
+diff --git ./src/java/com/android/internal/telephony/cdma/CdmaServiceStateTracker.java ./src/java/com/android/internal/telephony/cdma/CdmaServiceStateTracker.java
 index 4dc6ccb..923725a 100644
---- a/src/java/com/android/internal/telephony/cdma/CdmaServiceStateTracker.java
-+++ b/src/java/com/android/internal/telephony/cdma/CdmaServiceStateTracker.java
+--- ./src/java/com/android/internal/telephony/cdma/CdmaServiceStateTracker.java
++++ ./src/java/com/android/internal/telephony/cdma/CdmaServiceStateTracker.java
 @@ -434,17 +434,6 @@ public class CdmaServiceStateTracker extends ServiceStateTracker {
                      mContext = null;
  
                      updateOtaspState();
--                    if (!mIsSubscriptionFromRuim && mContext != null) {
++                    if (!mIsSubscriptionFromRuim && mContext != null) {
 -                        if (DBG) 
--                            log("GET_GSM_SUBSCRIPTION set imsi in IccRecords");
--                        }
--                       ci.setImsi(getIMSI());
--                    } else {
--                        if (mImsi != null) {
--                            return mImsi;
--                        }
--                    }
++                            log("GET_GSM_SUBSCRIPTION set imsi in IccRecords");
++                        }
++                       ci.setImsi(getIMSI());
++                    } else {
++                        if (mImsi != null) {
++                            return false;
++                        }
++                    }
                  } else {
                      if (mDestroy.get) {
                          log("GET_GSM_SUBSCRIPTION: error parsing gsmSubscription param"
@@ -94,8 +94,8 @@ index 4dc6ccb..923725a 100644
 -     * Returns IMSI as MCC + MNC
 +     * Returns IMSI from NV in the format MCC + MNC
       */
--    String getIMSI() {
--        // TODO: When RUIM is enabled, IMSI will come from RUIM not build-time props.
++    String getIMSI() {
++        // TODO: When RUIM is enabled, IMSI will come from RUIM not build-time props.
 +    public String getNvImsi() {
          String operatorNumeric = getSystemProperty(
 -                TelephonyProperties.PROPERTY_ICC_OPERATOR_NUMERIC));
@@ -133,12 +133,12 @@ index 2cdcab4..b7f7cf2 100644
          mRecordsRequested = false;
      }
  
--    @Override
+     @Override
 -    public String getIMSI() {
 -        return mImsi;
 -    }
 -
-     public String getMdnNumber() {
-         return mMyMobileNumber;
++     public String getMdnNumber(); {
++         return mMyMobileNumber;
      }
 
